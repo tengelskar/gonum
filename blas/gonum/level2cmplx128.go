@@ -11,6 +11,29 @@ import (
 	"gonum.org/v1/gonum/internal/asm/c128"
 )
 
+// Zgemv performs one of the matrix-vector operations
+//  y = alpha * A * x + beta * y    if tA = blas.NoTrans
+//  y = alpha * A^T * x + beta * y  if tA = blas.Trans
+//  y = alpha * A^H * x + beta * y  if tA = blas.ConjTrans
+// where alpha and beta are scalars, x and y are vectors, and A is an m×n dense matrix.
+func (Implementation) Zgemv(trans blas.Transpose, m, n int, alpha complex128, a []complex128, lda int, x []complex128, incX int, beta complex128, y []complex128, incY int) {
+	checkZMatrix('A', m, n, a, lda)
+	switch trans {
+	default:
+		panic(badTranspose)
+	case blas.NoTrans:
+		checkZVector('x', n, x, incX)
+		checkZVector('y', m, y, incY)
+	case blas.Trans, blas.ConjTrans:
+		checkZVector('x', m, x, incX)
+		checkZVector('y', n, y, incY)
+	}
+
+	if m == 0 || n == 0 || (alpha == 0 && beta == 1) {
+		return
+	}
+}
+
 // Zgerc performs the rank-one operation
 //  A += alpha * x * y^H
 // where A is an m×n dense matrix, alpha is a scalar, x is an m element vector,
